@@ -1,8 +1,12 @@
 library(tidyverse)
 library(modelr)
+library(purrr)
+library(dplyr)
 # a global function that deletes missing data but warns me before doing so
 options(na.action = na.warn)
 
+view(sim1)
+print(n= 50, sim1)
 # y = a_2*x + a_1
 # runif(n, min, max)
 # Generate n random numbers, each drawn uniformly between min and max
@@ -29,4 +33,61 @@ model1 <- function(a, data) {
 # Give me the predicted y-values from the model y = 7 + 1.5x
 # for every x in sim1
 # 7 + 1.5 * sim1$x
+# Just an example
 model1(c(7, 1.5), sim1)
+
+# Root mean squared deviation
+measure_distance <- function(mod, data) {
+  diff <- data$y - model1(mod, data)
+  sqrt(mean(diff ^ 2))
+}
+measure_distance(c(7, 1.5), sim1)
+
+# There are many candidate models therefore for every model we need to compute how far it is from the data
+# The function answers:
+# If a model has intercept a1 and slope a2, how far is it from the data
+sim1_dist <- function(a1, a2) {
+  measure_distance(c(a1, a2), sim1)
+}
+
+models <- models %>%
+  # map2 -> maps value in the function pairwise
+  # mutate takes the model table and adss a new column called dist
+  mutate(dist = purrr::map2_dbl(a1, a2, sim1_dist))
+models
+
+# Each point in the graph represents possible models in a parameter space
+# Highlighting in red shows where the best models cluster
+ggplot(models, aes(a1, a2)) +
+  geom_point(
+    data = filter(models, rank(dist) <= 10),
+    size = 4, color = "red"
+  ) +
+  geom_point(aes(colour = -dist))
+
+
+grid <- expand.grid(
+  # seq() creates 25 evenly spaced numbers
+  # 25*25 = 625 models
+  a1 = seq(-5, 20, length = 25),
+  a2 = seq(1, 3, length = 25)
+) %>%
+  # For every (a1, a2) pair in the grid, compute how far that model is from the data.
+  mutate(dist = purrr::map2_dbl(a1, a2, sim1_dist))
+
+grid %>%
+  ggplot(aes(a1, a2)) +
+  # Finds the 10 best models with the smallest distance and marks them red
+  geom_point(
+    data = filter(grid, rank(dist) <= 10),
+    size = 4, colour = "red"
+  ) +
+  geom_point(aes(color = -dist))
+
+# Overlaying the 10 best models on the data
+ggplot(sim1, aes(x, y)) +
+  geom_point(size = 2, color = "grey30") +
+  geom_abline(
+    aes(intercept = a1, slope = a2, color = -dist),
+    data = filter(grid, rank(dist) <= 10)
+  )
