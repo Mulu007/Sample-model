@@ -91,3 +91,15 @@ ggplot(sim1, aes(x, y)) +
     aes(intercept = a1, slope = a2, color = -dist),
     data = filter(grid, rank(dist) <= 10)
   )
+
+# Numerical minimisation through Newton-Raphson Search
+# Minimising distance gives the best fit line by minimising the loss function
+# A loss function measures how bas a model is
+# ie: Good line -> small residuals -> small distance
+best <- optim(c(0, 0), measure_distance, data = sim1)
+best$par
+#> [1] 4.22 2.05
+
+ggplot(sim1, aes(x, y)) +
+  geom_point(size = 2, color = "grey30") +
+  geom_abline(intercept = best$par[1], slope = best$par[2])
