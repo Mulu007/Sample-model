@@ -103,3 +103,40 @@ best$par
 ggplot(sim1, aes(x, y)) +
   geom_point(size = 2, color = "grey30") +
   geom_abline(intercept = best$par[1], slope = best$par[2])
+
+# PREDICTIONS
+# Predictions are derived from models
+# Models are abstract and predictions compare it to reality
+
+sim1_mod <- lm(y ~ x, data = sim1)
+coef(sim1_mod)
+
+grid <- sim1 %>%
+  data_grid(x)
+grid
+
+grid <- grid %>%
+  add_predictions(sim1_mod)
+grid
+
+ggplot(sim1, aes(x)) +
+  geom_point(aes(y = y)) +
+  geom_line(
+    aes(y = pred),
+    data = grid,
+    colour = "red",
+    size = 1
+  )
+
+# Adding residuals
+sim1 <- sim1 %>%
+  add_residuals(sim1_mod)
+sim1
+
+# Frequency polygon is one of the way to understand the spread of residuals
+ggplot(sim1, aes(resid)) +
+  geom_freqpoly(binwidth = 0.5)
+
+ggplot(sim1, aes(x, resid)) +
+  geom_ref_line(h = 0) +
+  geom_point()
