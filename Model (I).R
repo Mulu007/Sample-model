@@ -140,3 +140,20 @@ ggplot(sim1, aes(resid)) +
 ggplot(sim1, aes(x, resid)) +
   geom_ref_line(h = 0) +
   geom_point()
+
+# Learning loess
+# Loess does not assume linearity unlike lm()
+sim1_loess <- loess(y ~ x, data = sim1)
+
+grid <- sim1 %>%
+  data_grid(x)
+grid
+
+grid <- grid %>%
+  add_predictions(sim1_loess)
+grid
+
+ggplot(sim1, aes(x, y)) +
+  geom_point(color = "grey30") +
+  #geom_line(data = grid, aes(y = pred), color = "blue", linewidth = 1)
+  geom_smooth(method = "loess", se = FALSE)
